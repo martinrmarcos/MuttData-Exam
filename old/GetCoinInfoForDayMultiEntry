@@ -1,0 +1,123 @@
+import argparse
+## import some various libraries
+##!pip install unidecode
+import numpy as np
+import pandas as pd
+import os
+import seaborn as sns
+import matplotlib.pyplot as plt
+import sys
+import re
+import json
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import StandardScaler
+import unidecode
+import urllib.request
+import warnings
+warnings.filterwarnings("ignore")
+import argparse
+import logging
+from datetime import datetime, timedelta
+
+
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+
+
+main_path = '/Users/martinmarcos/ML Martin Marcos/Mutt Data Exam/'
+
+
+def main():
+    ### Creation of a parser in order to be able to get the first 2 arguments after the file name
+    ### in this case its going to be the coin desired and the date
+    
+    today_date = datetime.now().date()
+    today_date = today_date.strftime("%Y-%m-%d")
+    parser = argparse.ArgumentParser(   prog = 'GetCoinInfoForDay',
+                                        description = "Gets all information for a specific coin and date")
+    parser.add_argument("coin", type=str, help="the coin required")
+    ### if there is not a second argument entered, it will asuume is for the same day download
+    parser.add_argument("date", nargs='?', default=today_date, type=str, help="the date required")
+    ### if a second date is entered it will create a bulk download
+    parser.add_argument("to_date", nargs='?', default=None, type=str, help="the date required")
+    args = parser.parse_args()
+
+    if args.to_date is None:
+        to_date = args.date
+    else:
+        to_date = args.to_date
+
+
+
+
+    coin = args.coin
+    date = args.date
+    #to_date = args.to_date
+
+
+    date = datetime.strptime(date, "%Y-%m-%d")
+    to_date = datetime.strptime(to_date, "%Y-%m-%d")
+
+    date_list = []
+
+    datedelta = date
+
+    while datedelta <= to_date:
+        date_list.append(datedelta.strftime("%d-%m-%Y"))
+        datedelta += timedelta(days=1)
+
+    date = date.strftime("%d-%m-%Y")
+    to_date = to_date.strftime("%d-%m-%Y")
+
+    logging.info('user entered '+date+' as a date')
+    logging.info('user entered '+to_date+' as a to_date')
+    logging.info('user entered '+coin+' as selected coin')
+
+    path_to_save = main_path+'GetCoinInfoForDay_'+coin+'_'+date+'_to_'+to_date+'.csv'
+
+    ### we save the desired URL to use and the desired values to extract
+
+    #url = 'https://api.coingecko.com/api/v3/coins/'+coin+'/history?date='+date
+
+
+    dfs = {}
+    dfs = pd.DataFrame(dfs)
+
+
+    for datediff in date_list:
+
+        url = 'https://api.coingecko.com/api/v3/coins/'+coin+'/history?date='+datediff
+
+        contents = json.loads(urllib.request.urlopen(url).read())
+        market_data_json = contents['market_data']       
+        newdata = pd.json_normalize(market_data_json)
+        newdata.index = pd.to_datetime([datediff])
+        dfs = dfs.append(newdata)
+        logging.info('information has been loaded to a DataFrame for '+coin+' for the date: '+datediff)
+        #print('information has been loaded to a DataFrame for '+coin+' for the date: '+date)
+
+        ### Saving a new DF as a CSV, with the date as index and all the information i columns
+    print('DF was saved at: '+path_to_save)
+    print('Great Success!!!')
+    return pd.DataFrame(dfs).to_csv(path_to_save)
+
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

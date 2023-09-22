@@ -1,0 +1,13 @@
+
+
+version: '3.8'
+services:
+  postgres:
+    image: postgres
+    container_name: MuttDBdockercompose
+    environment:
+      POSTGRES_DB: MuttDB
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Mutt2023
+    ports:
+      - "5432:5432"
